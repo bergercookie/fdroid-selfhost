@@ -1,0 +1,158 @@
+name: Release
+
+# Runs when a stable tag (1.2.3) is pushed, and is called by nightly.yml for
+# nightly versions (1.3.3.post1). Builds the APK and the server image, then
+# publishes a GitHub release.
+on:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+  workflow_call:
+    inputs:
+      version:
+        description: Version to release, e.g. 1.3.3.post1
+        required: true
+        type: string
+      sha:
+        description: Commit to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      sha: ${{ steps.meta.outputs.sha }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      image: ${{ steps.meta.outputs.image }}
+      moving_tag: ${{ steps.meta.outputs.moving_tag }}
+    steps:
+      - id: meta
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          version="${INPUT_VERSION:-$GITHUB_REF_NAME}"
+          [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$ ]] || { echo "bad version: $version"; exit 1; }
+          if [[ $version == *.post* ]]; then
+            prerelease=true moving_tag=nightly
+          else
+            prerelease=false moving_tag=latest
+          fi
+          {
+            echo "version=$version"
+            echo "sha=${INPUT_SHA:-$GITHUB_SHA}"
+            echo "prerelease=$prerelease"
+            echo "moving_tag=$moving_tag"
+            echo "image=ghcr.io/${GITHUB_REPOSITORY,,}"
+          } >> "$GITHUB_OUTPUT"
+
+  verify:
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
+      - uses: ./.github/actions/setup
+      - run: just ci
+
+  apk:
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
+      - uses: ./.github/actions/setup
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [[ -n $KEYSTORE_BASE64 ]]; then
+            base64 -d <<<"$KEYSTORE_BASE64" > "$RUNNER_TEMP/release.jks"
+            echo "APP_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; the APK is signed with a throwaway debug key"
+          fi
+      - run: just apk
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+          APP_KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          APP_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          APP_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: dist/*.apk
+
+  image:
+    needs: [meta, verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: VERSION=${{ needs.meta.outputs.version }}
+          tags: |
+            ${{ needs.meta.outputs.image }}:${{ needs.meta.outputs.version }}
+            ${{ needs.meta.outputs.image }}:${{ needs.meta.outputs.moving_tag }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+  release:
+    needs: [meta, apk, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: dist
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.meta.outputs.version }}
+          SHA: ${{ needs.meta.outputs.sha }}
+          IMAGE: ${{ needs.meta.outputs.image }}
+          PRERELEASE: ${{ needs.meta.outputs.prerelease }}
+        run: |
+          cat > notes.md <<NOTES
+          ## Install
+
+          **Server** (multi-arch Docker image):
+
+          \`\`\`
+          docker pull $IMAGE:$VERSION
+          \`\`\`
+
+          **Android app**: download the attached \`.apk\`. It asks for your server URL on first launch.
+          NOTES
+          flags=(--target "$SHA" --title "$VERSION" --notes-file notes.md --generate-notes)
+          if [[ $PRERELEASE == true ]]; then flags+=(--prerelease --latest=false); fi
+          gh release create "$VERSION" dist/*.apk --repo "$GITHUB_REPOSITORY" "${flags[@]}"

@@ -1,0 +1,2 @@
+ignored:
+  - DL3008 # apt package versions can't be pinned across Debian point releases
