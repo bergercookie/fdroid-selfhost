@@ -28,14 +28,4 @@ check "v-prefixed tags" "1.3.3.post1" "$(nightly v1.2.3)"
 check "v-prefixed nightlies are counted" "1.3.3.post3" "$(nightly v1.2.3 v1.3.3.post1 v1.3.3.post2)"
 check "mixed prefixes" "1.11.0.post1" "$(nightly 1.9.0 v1.10.0)"
 
-check "code stable" "1030300" "$(./version.sh code 1.3.3)"
-check "code ignores v prefix" "1030300" "$(./version.sh code v1.3.3)"
-check "code nightly" "1030302" "$(./version.sh code 1.3.3.post2)"
-check "code leading zeros" "1080900" "$(./version.sh code 1.08.09)"
-if ./version.sh code 1.2 2>/dev/null; then
-	check "code rejects malformed versions" "failure" "success"
-else
-	check "code rejects malformed versions" "failure" "failure"
-fi
-
 exit $((failures > 0))

@@ -1,9 +1,7 @@
 .git
 .github
-android
 docs
 e2e
 data
-dist
 bin
 *.md

@@ -39,20 +39,6 @@ up:
     mkdir -p data
     docker compose up --build
 
-# Build the Android app. Optionally bake in a default server URL.
-apk server_url="":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    v="{{ version }}"; v="${v#v}"; code_version="$v"
-    # Untagged builds get a dev name; Android needs a positive versionCode.
-    if [[ ! $v =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$ ]]; then v="0.0.0-dev"; code_version="0.0.1"; fi
-    gradle -p android assembleRelease \
-        -PversionName="$v" -PversionCode="$(scripts/version.sh code "$code_version")" \
-        -PserverUrl="{{ server_url }}"
-    mkdir -p dist
-    cp android/app/build/outputs/apk/release/*.apk "dist/fdroid-selfhost-$v.apk"
-    echo "Built dist/fdroid-selfhost-$v.apk"
-
 # Rewrite files into the canonical format
 fmt:
     gofmt -w .
@@ -106,4 +92,4 @@ e2e: docker-build
 ci: lint test vuln e2e
 
 clean:
-    rm -rf bin dist android/.gradle android/build android/app/build
+    rm -rf bin
