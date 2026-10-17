@@ -1,0 +1,15 @@
+# Runtime data: contains the repo signing key. Never commit.
+data/
+.env
+.fdroid-publish.env
+*.p12
+*.jks
+*.keystore
+
+# Build output
+bin/
+dist/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties

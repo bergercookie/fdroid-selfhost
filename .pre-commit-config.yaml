@@ -1,0 +1,38 @@
+# Install with `just setup`. The lint hooks just call the justfile.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: lint-go
+        name: lint go
+        entry: just lint-go
+        language: system
+        pass_filenames: false
+        files: '\.go$|^go\.mod$|^\.golangci\.yml$'
+      - id: lint-shell
+        name: lint shell scripts
+        entry: just lint-shell
+        language: system
+        pass_filenames: false
+        files: '\.sh$'
+      - id: lint-docker
+        name: lint Dockerfile
+        entry: just lint-docker
+        language: system
+        pass_filenames: false
+        files: '^Dockerfile$|^\.hadolint\.yaml$'
+      - id: lint-actions
+        name: lint GitHub workflows
+        entry: just lint-actions
+        language: system
+        pass_filenames: false
+        files: '^\.github/'

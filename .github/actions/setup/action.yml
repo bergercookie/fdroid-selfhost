@@ -1,0 +1,10 @@
+name: Set up toolchain
+description: Go (version from go.mod) and just, the tools every job needs.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache-dependency-path: go.mod # no go.sum: the tools run via `go run`
+    - uses: extractions/setup-just@v2

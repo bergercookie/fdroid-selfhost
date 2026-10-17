@@ -1,0 +1,79 @@
+:root {
+  color-scheme: light dark;
+  --accent: #1976d2;
+  --danger: #c62828;
+  --border: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+body {
+  margin: 0;
+  font: 16px/1.5 system-ui, sans-serif;
+}
+
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+section {
+  margin: 2rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+dt {
+  font-weight: 600;
+}
+
+dd {
+  margin: 0 0 0.75rem;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 24rem;
+}
+
+label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+button, .button {
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  border-radius: 4px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+.error {
+  color: var(--danger);
+}

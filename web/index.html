@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F-Droid repo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1 id="name">F-Droid repo</h1>
+
+    <section>
+      <h2>Add to F-Droid</h2>
+      <p>On a device with the F-Droid app, open the link below, or add the address and fingerprint by hand.</p>
+      <p><a id="add-link" class="button" href="#">Add this repository</a></p>
+      <dl>
+        <dt>Address</dt><dd><code id="repo-url"></code></dd>
+        <dt>Fingerprint</dt><dd><code id="fingerprint"></code></dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Apps</h2>
+      <p id="index-status" class="muted"></p>
+      <table>
+        <thead><tr><th>File</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+        <tbody id="apks"></tbody>
+      </table>
+      <p id="empty" class="muted" hidden>No APKs yet.</p>
+    </section>
+
+    <section>
+      <h2>Publish</h2>
+      <form id="upload">
+        <label>Upload token <input id="token" type="password" autocomplete="off" required></label>
+        <label>APK file <input id="file" type="file" accept=".apk" required></label>
+        <button type="submit">Upload</button>
+      </form>
+      <p id="message" role="status"></p>
+    </section>
+
+    <footer class="muted">fdroid-selfhost <span id="version"></span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

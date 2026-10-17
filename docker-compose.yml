@@ -1,0 +1,15 @@
+services:
+  fdroid:
+    image: ${FDROID_IMAGE:-fdroid-selfhost:local}
+    build: .
+    restart: unless-stopped
+    # Run as your own user so ./data is owned by you. Create ./data first.
+    user: "${PUID:-1000}:${PGID:-1000}"
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL in .env}
+      UPLOAD_TOKEN: ${UPLOAD_TOKEN:?set UPLOAD_TOKEN in .env}
+      REPO_NAME: ${REPO_NAME:-My F-Droid Repo}
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - ./data:/data
