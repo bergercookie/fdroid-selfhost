@@ -16,7 +16,7 @@ mkdir -p data                   # holds the signing key: back it up
 docker compose up -d --build
 ```
 
-Open `PUBLIC_URL` in a browser: you get the web UI. Put a TLS reverse proxy in front of port 8080 (Caddy, Traefik, `tailscale serve`, ...).
+Open `PUBLIC_URL` in a browser: you get the web UI. Run it behind a reverse proxy such as [Caddy](https://caddyserver.com) to serve it over HTTPS (see [docs/server.md](docs/server.md#https-vpn-and-android)); the container itself only speaks HTTP.
 
 To add the repo on a phone, open the UI there and tap **Add this repository**. To publish an app, see [docs/publishing.md](docs/publishing.md).
 

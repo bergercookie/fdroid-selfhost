@@ -56,9 +56,19 @@ Uploads must be zip files containing `AndroidManifest.xml`; anything else is rej
 
 ## HTTPS, VPN and Android
 
-- F-Droid expects HTTPS for anything beyond a trusted LAN. The container serves plain HTTP; put a reverse proxy in front.
-- **Tailscale**: `tailscale serve --https=443 localhost:8080` gives a valid certificate, with no public exposure.
-- **WireGuard / LAN**: use Caddy or Traefik with a DNS-challenge certificate for a real domain pointing at a private IP. Avoid a private CA: Android apps ignore user-installed CAs by default.
+The container serves plain HTTP only. **Run it behind a reverse proxy such as [Caddy](https://caddyserver.com) that terminates HTTPS**: F-Droid expects HTTPS for anything beyond a trusted LAN, and the upload token must not cross the network in clear text. Set `PUBLIC_URL` to the `https://` address the proxy serves.
+
+A minimal `Caddyfile`:
+
+```
+fdroid.example.com {
+    reverse_proxy localhost:8080
+}
+```
+
+Caddy gets and renews the certificate automatically. Raise Caddy's request body limit if you upload very large APKs, and keep `MAX_UPLOAD_MB` in step.
+
+- **Private network (VPN or LAN):** use a real domain whose DNS points at a private IP, and have Caddy obtain the certificate with a [DNS challenge](https://caddyserver.com/docs/automatic-https#dns-challenge). Avoid a private CA: Android apps ignore user-installed CAs by default.
 - The server must be reachable from the phone when F-Droid refreshes, so connect the VPN first. Installed apps keep working when it isn't.
 - Everyone with the upload token can add or delete APKs. Treat it like a password, and keep the upload path on the VPN too.
 
