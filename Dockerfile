@@ -11,10 +11,11 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}"
 
 FROM debian:bookworm-slim
 # fdroidserver comes from PyPI: Debian's package drags in a C++ toolchain,
-# LLVM, scipy and a full JDK that `fdroid update` never uses. Bump on purpose.
+# LLVM and scipy that `fdroid update` never uses. It does need the JDK (jar,
+# jarsigner, keytool) to build and sign the index. Bump the version on purpose.
 ARG FDROIDSERVER_VERSION=2.4.5
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 python3-venv apksigner aapt default-jre-headless ca-certificates \
+ && apt-get install -y --no-install-recommends python3 python3-venv apksigner aapt default-jdk-headless ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
  && python3 -m venv /opt/fdroidserver \
  && /opt/fdroidserver/bin/pip install --no-cache-dir "fdroidserver==${FDROIDSERVER_VERSION}" \
