@@ -10,14 +10,20 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}"
     -o /out/fdroid-selfhost ./cmd/fdroid-selfhost
 
 FROM debian:bookworm-slim
+# fdroidserver comes from PyPI: Debian's package drags in a C++ toolchain,
+# LLVM, scipy and a full JDK that `fdroid update` never uses. Bump on purpose.
+ARG FDROIDSERVER_VERSION=2.4.5
 RUN apt-get update \
- && apt-get install -y --no-install-recommends fdroidserver apksigner aapt default-jre-headless ca-certificates \
+ && apt-get install -y --no-install-recommends python3 python3-venv apksigner aapt default-jre-headless ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
+ && python3 -m venv /opt/fdroidserver \
+ && /opt/fdroidserver/bin/pip install --no-cache-dir "fdroidserver==${FDROIDSERVER_VERSION}" \
  && mkdir /data && chown 1000:1000 /data
 COPY --from=build /out/fdroid-selfhost /usr/local/bin/fdroid-selfhost
 
 # Any uid can run the image (see `user:` in docker-compose.yml); it only writes to /data.
-ENV DATA_DIR=/data HOME=/tmp
+# GitPython is imported by fdroidserver but git itself is never needed here.
+ENV DATA_DIR=/data HOME=/tmp PATH=/opt/fdroidserver/bin:$PATH GIT_PYTHON_REFRESH=quiet
 VOLUME /data
 EXPOSE 8080
 USER 1000:1000
