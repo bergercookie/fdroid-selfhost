@@ -120,6 +120,35 @@ func (s *Store) Delete(name string) error {
 	return err
 }
 
+// RemoveEmptyFiles deletes zero-size regular files from the repo directory and
+// returns their names. fdroidserver treats every non-APK file in repo/ as a
+// deliverable and aborts the whole update ("... is zero size!") if one is
+// empty, e.g. a stray categories.txt, so they must not be left in place.
+func (s *Store) RemoveEmptyFiles() ([]string, error) {
+	entries, err := os.ReadDir(s.repoDir)
+	if err != nil {
+		return nil, err
+	}
+	var removed []string
+	for _, e := range entries {
+		if !e.Type().IsRegular() {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			return removed, err
+		}
+		if info.Size() != 0 {
+			continue
+		}
+		if err := os.Remove(filepath.Join(s.repoDir, e.Name())); err != nil {
+			return removed, err
+		}
+		removed = append(removed, e.Name())
+	}
+	return removed, nil
+}
+
 // Signature changes whenever an APK is added, removed or replaced.
 func (s *Store) Signature() (string, error) {
 	apks, err := s.List()

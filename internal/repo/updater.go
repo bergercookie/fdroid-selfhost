@@ -77,6 +77,11 @@ func (u *Updater) update(ctx context.Context) {
 
 	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
 	defer cancel()
+	if removed, err := u.store.RemoveEmptyFiles(); err != nil {
+		slog.Warn("removing empty files from repo", "err", err)
+	} else if len(removed) > 0 {
+		slog.Warn("removed empty files that would abort fdroid update", "files", removed)
+	}
 	out, err := u.run(ctx, u.dataDir, u.fdroid, "update", "--create-metadata")
 
 	st := Status{State: "ok", LastRun: time.Now().UTC()}

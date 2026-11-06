@@ -202,3 +202,24 @@ func waitFor(t *testing.T, cond func() bool, what string) {
 	}
 	t.Fatalf("timed out waiting for %s", what)
 }
+
+func TestRemoveEmptyFiles(t *testing.T) {
+	s, err := NewStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{"categories.txt": "", "keep.apk": "x", "notes.txt": "hi"} {
+		if err := os.WriteFile(filepath.Join(s.RepoDir(), name), []byte(body), 0o644); err != nil { //nolint:gosec
+			t.Fatal(err)
+		}
+	}
+	removed, err := s.RemoveEmptyFiles()
+	if err != nil || len(removed) != 1 || removed[0] != "categories.txt" {
+		t.Fatalf("RemoveEmptyFiles = %v, %v", removed, err)
+	}
+	for _, name := range []string{"keep.apk", "notes.txt"} {
+		if _, err := os.Stat(filepath.Join(s.RepoDir(), name)); err != nil {
+			t.Errorf("%s was removed: %v", name, err)
+		}
+	}
+}
