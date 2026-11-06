@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"crypto/rand"
+	_ "embed"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -21,7 +22,13 @@ const (
 	passFile     = "keystore.pass"
 	keyAlias     = "repokey"
 	configFile   = "config.yml"
+	iconFile     = "icon.png"
 )
+
+// defaultIcon is the repo icon F-Droid clients show when the repo is added.
+//
+//go:embed icon.png
+var defaultIcon []byte
 
 // Runner runs an external command in dir and returns its combined output.
 // It exists so tests can replace keytool and fdroid.
@@ -52,6 +59,14 @@ func Setup(ctx context.Context, cfg config.Config, run Runner) (string, error) {
 	keystore := filepath.Join(cfg.DataDir, keystoreFile)
 	if _, err := os.Stat(keystore); errors.Is(err, os.ErrNotExist) {
 		if err := generateKeystore(ctx, cfg, run, pass); err != nil {
+			return "", err
+		}
+	}
+
+	// Keep an existing icon so operators can swap in their own.
+	iconPath := filepath.Join(cfg.DataDir, iconFile)
+	if _, err := os.Stat(iconPath); errors.Is(err, os.ErrNotExist) {
+		if err := os.WriteFile(iconPath, defaultIcon, 0o644); err != nil { //nolint:gosec // the icon is public by design
 			return "", err
 		}
 	}
@@ -119,6 +134,7 @@ func renderFdroidConfig(cfg config.Config, pass, apksigner string) string {
 		"repo_url: " + quote(cfg.RepoURL()),
 		"repo_name: " + quote(cfg.RepoName),
 		"repo_description: " + quote(cfg.RepoDescription),
+		"repo_icon: " + quote(iconFile),
 		"repo_keyalias: " + quote(keyAlias),
 		"keystore: " + quote(keystoreFile),
 		"keystorepass: " + quote(pass),

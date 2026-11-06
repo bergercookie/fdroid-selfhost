@@ -25,6 +25,7 @@ data/
 ├── keystore.p12    repo signing key, created on first start
 ├── keystore.pass   its password (unless you set KEYSTORE_PASS)
 ├── config.yml      fdroidserver config, regenerated on every start
+├── icon.png        repo icon shown in F-Droid clients; written once, replace it to customise
 ├── repo/           APKs and the generated index. This is what clients download.
 └── metadata/       optional per-app descriptions and icons (fdroidserver format)
 ```

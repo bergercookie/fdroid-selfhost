@@ -109,6 +109,7 @@ func TestRenderFdroidConfigQuotesValues(t *testing.T) {
 	yml := renderFdroidConfig(cfg, "secret", "/usr/bin/apksigner")
 	for _, want := range []string{
 		`repo_url: "https://f.example.com/repo"`,
+		`repo_icon: "icon.png"`,
 		`repo_name: "My \"repo\": #1"`,
 		`keystorepass: "secret"`,
 		`apksigner: "/usr/bin/apksigner"`,
@@ -143,6 +144,10 @@ func TestSetupCreatesKeyOnceAndReusesIt(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, configFile)); err != nil {
 		t.Errorf("config.yml not written: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, iconFile))
+	if err != nil || !bytes.HasPrefix(got, []byte("\x89PNG")) {
+		t.Errorf("icon.png not written as a PNG: %v", err)
 	}
 }
 
